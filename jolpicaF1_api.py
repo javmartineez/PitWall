@@ -10,7 +10,7 @@ SCHEME = "http"
 BASE = "api.jolpi.ca"
 PATH = "/ergast/f1"
 
-SLEEP = 0.35 #valor de espera para el rate-limiting
+SLEEP = 0.35 #wait time for rate limiting
 CACHE_DIR = "cache_pitstops"
 CACHE_DRIVERS_DIR = "cache_drivers"
 
@@ -56,15 +56,15 @@ DRIVER_NAME_TO_ID = {
 
 def build_api_url(endpoint_path, query_dict=None):
     """
-    Construye una URL completa para realizar una llamada a la API,
-    combinando el endpoint y los parámetros de consulta.
+    Builds a full URL for an API call by combining
+    the endpoint and the query parameters.
 
     Args:
-        - endpoint_path (str): ruta del endpoint de la API.
-        - query_dict (dict, optional): diccionario con los parámetros de la query.
+        - endpoint_path (str): API endpoint path.
+        - query_dict (dict, optional): dictionary with the query parameters.
 
     Returns:
-        - url (str): URL completa lista para realizar la petición.
+        - url (str): full URL ready for the request.
     """
     if query_dict is None:
         query_dict = {}
@@ -78,16 +78,16 @@ def build_api_url(endpoint_path, query_dict=None):
 
 def all_pitstops_in(start_year, end_year):
     """
-    Descarga y agrega todos los pit stops de Fórmula 1 en un rango de años,
-    utilizando la API, con sistema de caché local y control de rate limiting.
+    Downloads and aggregates every Formula 1 pit stop in a range of years
+    from the API, with a local cache and rate-limit handling.
 
     Args:
-        - start_year (int): año inicial del rango a consultar.
-        - end_year (int): año final del rango a consultar.
+        - start_year (int): first year of the range.
+        - end_year (int): last year of the range.
 
     Returns:
-        - all_pitstops (list[dict]): lista de diccionarios con la información
-          de cada pit stop registrada en el periodo indicado.
+        - all_pitstops (list[dict]): list of dictionaries with the information
+          of every pit stop recorded in the given period.
     """
 
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -162,17 +162,17 @@ def all_pitstops_in(start_year, end_year):
 
 def driverid_to_number(start_year, end_year):
     """
-    Construye un mapeo entre driverId y número permanente de los pilotos
-    para cada temporada dentro de un rango de años, utilizando la API
-    y caché local para reducir llamadas.
+    Builds a mapping between driverId and the drivers' permanent number
+    for each season within a range of years, using the API
+    and a local cache to reduce calls.
 
     Args:
-        - start_year (int): año inicial del rango a consultar.
-        - end_year (int): año final del rango a consultar.
+        - start_year (int): first year of the range.
+        - end_year (int): last year of the range.
 
     Returns:
-        - mapping_drivers (dict): diccionario con estructura
-          {year: {driverId: permanentNumber}} para cada temporada.
+        - mapping_drivers (dict): dictionary with the structure
+          {year: {driverId: permanentNumber}} for each season.
     """
 
     os.makedirs(CACHE_DRIVERS_DIR, exist_ok=True)
@@ -192,7 +192,7 @@ def driverid_to_number(start_year, end_year):
                 r = requests.get(url, timeout=20)
 
                 if r.status_code == 429:
-                    print("Exceso de requests, error 429")
+                    print("Too many requests, error 429")
                     time.sleep(2)
                     continue
 
@@ -219,20 +219,20 @@ def driverid_to_number(start_year, end_year):
 
 def write_pitstops_csvs(pitstops, mapping_drivers, base_dir="data"):
     """
-    Genera y guarda un CSV por carrera con estadísticas agregadas de pit stops,
-    incluyendo número de paradas y mediana de duración por piloto.
+    Builds and saves one CSV per race with aggregated pit stop statistics,
+    including the number of stops and the median stop duration per driver.
 
     Args:
-        - pitstops (list[dict]): lista de registros de pit stops (uno por parada) obtenidos de la API.
-        - mapping_drivers (dict): diccionario {year: {driverId: permanentNumber}} para asignar DriverNumber.
-        - base_dir (str): directorio base donde se guardarán los CSV generados.
+        - pitstops (list[dict]): list of pit stop records (one per stop) obtained from the API.
+        - mapping_drivers (dict): dictionary {year: {driverId: permanentNumber}} used to assign DriverNumber.
+        - base_dir (str): base directory where the generated CSVs are saved.
     """
     df = pd.DataFrame(pitstops)
 
-    # duration a numérico
+    # duration to numeric
     df["duration"] = pd.to_numeric(df["duration"], errors="coerce")
 
-    # añadir número de piloto
+    # add the driver number
     df["DriverNumber"] = df.apply(lambda x: mapping_drivers.get(x["season"], {}).get(x["driverId"]), axis=1)
 
     df_agg = (df.groupby(["season", "round", "driverId", "DriverNumber"]).agg(
@@ -241,7 +241,7 @@ def write_pitstops_csvs(pitstops, mapping_drivers, base_dir="data"):
             .reset_index()
             .rename(columns={"driverId": "DriverId"}))
 
-    # escribir un CSV por carrera
+    # write one CSV per race
     for (season, round), sub in df_agg.groupby(["season", "round"], sort=True):
         year_dir = os.path.join(base_dir, str(season))
         os.makedirs(year_dir, exist_ok=True)
@@ -253,17 +253,17 @@ def write_pitstops_csvs(pitstops, mapping_drivers, base_dir="data"):
 
 def build_merged_dataset(data_root="data", year_start=2019, year_end=2024, out_csv=None):
     """
-    Construye un dataset combinado por temporada y carrera, uniendo los CSV del scraping
-    (datos web) con los CSV generados desde la API (pit stops), y opcionalmente lo guarda.
+    Builds a combined dataset per season and race, joining the scraped CSVs
+    (web data) with the CSVs generated from the API (pit stops), and optionally saves it.
 
     Args:
-        - data_root (str): directorio raíz donde están las carpetas por año con los CSV.
-        - year_start (int): primer año (incluido) a procesar.
-        - year_end (int): último año (incluido) a procesar.
-        - out_csv (str, optional): ruta de salida si se quiere guardar el dataset final en CSV.
+        - data_root (str): root directory with one folder per year holding the CSVs.
+        - year_start (int): first year (included) to process.
+        - year_end (int): last year (included) to process.
+        - out_csv (str, optional): output path if the final dataset should be saved as CSV.
 
     Returns:
-        - big_df (DataFrame): dataframe final con todas las temporadas y carreras mergeadas.
+        - big_df (DataFrame): final dataframe with every season and race merged.
     """
     all_rows = []
 

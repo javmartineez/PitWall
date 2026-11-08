@@ -6,17 +6,17 @@ import jolpicaF1_api as api
 
 def apartado_scrapy(start_year: int, end_year: int):
     """
-    Ejecuta el proceso de scraping de datos de F1 para un rango de años,
-    lanzando el spider correspondiente con Scrapy.
+    Runs the F1 data scraping process for a range of years
+    by launching the corresponding Scrapy spider.
 
     Args:
-        - start_year (int): año inicial del rango a scrapear.
-        - end_year (int): año final del rango a scrapear.
+        - start_year (int): first year of the range to scrape.
+        - end_year (int): last year of the range to scrape.
     """
     settings = get_project_settings()
     process = CrawlerProcess(settings)
 
-    # Pasamos los parámetros al spider creado. 
+    # Pass the parameters to the spider. 
     process.crawl(F1WikiSpider, start_year=start_year, end_year=end_year)
     process.start()
 
@@ -24,15 +24,15 @@ def apartado_scrapy(start_year: int, end_year: int):
 
 def apartado_api(start_year, end_year):
     """
-    Obtiene y procesa datos de la API de F1 para un rango de años,
-    generando ficheros CSV intermedios y un dataset final combinado.
+    Fetches and processes F1 API data for a range of years,
+    generating intermediate CSV files and a final combined dataset.
 
     Args:
-        - start_year (int): año inicial del rango a consultar en la API.
-        - end_year (int): año final del rango a consultar en la API.
+        - start_year (int): first year of the range to query from the API.
+        - end_year (int): last year of the range to query from the API.
 
     Returns:
-        - complete_df (DataFrame): dataset final con toda la información combinada.
+        - complete_df (DataFrame): final dataset with all the combined information.
     """
     pitstops = api.all_pitstops_in(start_year, end_year)
     driver_numbers = api.driverid_to_number(start_year, end_year)
