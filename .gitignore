@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.ipynb_checkpoints/
+cache_pitstops/
+cache_drivers/
+data/
+.vscode/
+.idea/
+.DS_Store
